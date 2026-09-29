@@ -6,7 +6,7 @@ blueprint:
     - brightness control (hold up/down)
     - off button (short press off)
   domain: automation
-  source_url: https://github.com/Minnozz/home-assistant-config/blob/main/blueprints/hue-dimmer-switch-zigbee2mqtt.yaml
+  source_url: https://github.com/BartSchuurmans/home-assistant-config/blob/main/blueprints/hue-dimmer-switch-zigbee2mqtt.yaml
   input:
     dimmer_action:
       name: Dimmer Switch Action Sensor
