@@ -6,16 +6,22 @@ blueprint:
     - brightness control (hold up/down)
     - off button (short press off)
   domain: automation
+  author: Bart Schuurmans
   source_url: https://github.com/BartSchuurmans/home-assistant-config/blob/main/blueprints/hue-dimmer-switch-zigbee2mqtt.yaml
+  homeassistant:
+    min_version: "2024.10.0"
   input:
-    dimmer_action:
-      name: Dimmer Switch Action Sensor
-      description: "The action indicating the button press on the Hue Dimmer Switch to configure"
+    z2m_device_name:
+      name: Dimmer Switch Name
+      description: "The friendly name of the Hue Dimmer Switch in Zigbee2MQTT"
       selector:
-        entity:
-          integration: mqtt
-          domain: sensor
-          multiple: true
+        text:
+    z2m_base_topic:
+      name: Zigbee2MQTT Base Topic
+      description: "The MQTT base topic of Zigbee2MQTT"
+      default: zigbee2mqtt
+      selector:
+        text:
     target_light:
       name: Target Lights
       description: "Target lights used for the off button and brightness control"
@@ -27,22 +33,22 @@ blueprint:
       name: On Button
       description: "Scene to set when pushing the On button"
       selector:
-        target:
-          entity:
+        entity:
+          filter:
             - domain: scene
     scene_up:
       name: Up Button
       description: "Scene to set when pushing the Brightness Up button"
       selector:
-        target:
-          entity:
+        entity:
+          filter:
             - domain: scene
     scene_down:
       name: Down Button
       description: "Scene to set when pushing the Brightness Down button"
       selector:
-        target:
-          entity:
+        entity:
+          filter:
             - domain: scene
     brightness_step_pct:
       name: Brightness step size
@@ -50,75 +56,80 @@ blueprint:
       default: 20
       selector:
         number:
-          min: 0
+          min: 1
           max: 100
           unit_of_measurement: "%"
           mode: slider
 
 mode: parallel
 
-trigger:
-  - platform: state
-    entity_id: !input dimmer_action
-    to: "on_press_release"
-    id: on_pressed
-  - platform: state
-    entity_id: !input dimmer_action
-    to: "up_press_release"
-    id: up_pressed
-  - platform: state
-    entity_id: !input dimmer_action
-    to: "up_hold"
-    id: up_tick
-  - platform: state
-    entity_id: !input dimmer_action
-    to: "down_press_release"
-    id: down_pressed
-  - platform: state
-    entity_id: !input dimmer_action
-    to: "down_hold"
-    id: down_tick
-  - platform: state
-    entity_id: !input dimmer_action
-    to: "off_press_release"
-    id: off_pressed
+trigger_variables:
+  z2m_base_topic: !input z2m_base_topic
+  z2m_device_name: !input z2m_device_name
 
-condition: []
+triggers:
+  - trigger: mqtt
+    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
+    payload: "on_press_release"
+    id: on_pressed
+  - trigger: mqtt
+    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
+    payload: "up_press_release"
+    id: up_pressed
+  - trigger: mqtt
+    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
+    payload: "up_hold"
+    id: up_tick
+  - trigger: mqtt
+    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
+    payload: "down_press_release"
+    id: down_pressed
+  - trigger: mqtt
+    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
+    payload: "down_hold"
+    id: down_tick
+  - trigger: mqtt
+    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
+    payload: "off_press_release"
+    id: off_pressed
 
 variables:
   brightness_step_pct: !input brightness_step_pct
 
-action:
+actions:
   - choose:
       - conditions:
           - condition: trigger
             id: on_pressed
         sequence:
-          - service: scene.turn_on
-            target: !input scene_on
+          - action: scene.turn_on
+            target:
+              entity_id: !input scene_on
             data:
               transition: 1
       - conditions:
           - condition: trigger
             id: up_pressed
         sequence:
-          - service: scene.turn_on
-            target: !input scene_up
+          - action: scene.turn_on
+            target:
+              entity_id: !input scene_up
             data:
               transition: 1
       - conditions:
           - condition: trigger
             id: down_pressed
         sequence:
-          - service: scene.turn_on
-            target: !input scene_down
+          - action: scene.turn_on
+            target:
+              entity_id: !input scene_down
             data:
               transition: 1
       - conditions:
           - condition: trigger
             id: up_tick
         sequence:
-          - service: light.turn_on
+          - action: light.turn_on
             target: !input target_light
             data:
               brightness_step_pct: "{{ brightness_step_pct }}"
@@ -127,7 +138,7 @@ action:
           - condition: trigger
             id: down_tick
         sequence:
-          - service: light.turn_on
+          - action: light.turn_on
             target: !input target_light
             data:
               brightness_step_pct: "{{ -1 * brightness_step_pct }}"
@@ -136,14 +147,7 @@ action:
           - condition: trigger
             id: off_pressed
         sequence:
-          - service: light.turn_off
+          - action: light.turn_off
             target: !input target_light
             data:
               transition: 1
-    default:
-      - service: persistent_notification.create
-        data:
-          message:
-            Hue Dimmer Switch ran default event from "choose" action on button press!
-          notification_id: hue_dimmer_switch_blueprint
-          title: Uncaught Dimmer Command
