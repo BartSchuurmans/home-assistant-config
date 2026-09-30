@@ -169,7 +169,10 @@ actions:
             target: !input target_light
             data:
               brightness_step_pct: "{{ brightness_step_pct * speed_multiplier }}"
-              transition: 0.2
+          # Give the light's new brightness time to reach Home Assistant, so the
+          # next queued step builds on it instead of on a stale value.
+          - delay:
+              milliseconds: 200
       - conditions:
           - condition: trigger
             id: dial_left
@@ -178,4 +181,7 @@ actions:
             target: !input target_light
             data:
               brightness_step_pct: "{{ -1 * brightness_step_pct * speed_multiplier }}"
-              transition: 0.2
+          # Give the light's new brightness time to reach Home Assistant, so the
+          # next queued step builds on it instead of on a stale value.
+          - delay:
+              milliseconds: 200
