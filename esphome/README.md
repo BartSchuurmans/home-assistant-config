@@ -83,7 +83,7 @@ CC1101 module to Olimex ESP32-DevKit-LiPo. Use 3.3 V, never 5 V:
 | SCK | GPIO18 |
 | MOSI | GPIO23 |
 | MISO (SO) | GPIO19 |
-| CSN | GPIO5 |
+| CSN | GPIO25 |
 | GDO0 | GPIO26 |
 | GDO2 | GPIO27 |
 

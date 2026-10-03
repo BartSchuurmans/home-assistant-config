@@ -8,7 +8,7 @@
 # CC1101 wiring (module pin -> ESP32):
 #   VCC  -> 3.3V        GND  -> GND
 #   SCK  -> GPIO18      MOSI -> GPIO23
-#   MISO -> GPIO19      CSN  -> GPIO5
+#   MISO -> GPIO19      CSN  -> GPIO25
 #   GDO0 -> GPIO26 (TX data in)
 #   GDO2 -> GPIO27 (RX data out)
 #
@@ -61,7 +61,7 @@ spi:
 
 cc1101:
   id: radio
-  cs_pin: GPIO5
+  cs_pin: GPIO25
   # Shared with remote_transmitter: CC1101 drives it while receiving and
   # the ESP32 drives it while sending.
   gdo0_pin:
