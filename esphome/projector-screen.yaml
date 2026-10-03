@@ -42,7 +42,8 @@ api:
 
 ota:
   - platform: esphome
-    password: !secret projector-screen__ota_password
+    # Uploads use the api encryption key above.
+    encryption: {}
 
 wifi:
   ssid: !secret wifi_ssid
