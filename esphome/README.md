@@ -8,7 +8,9 @@
 ## Secrets
 
 The configs read passwords and keys from a separate `secrets.yaml`, so they
-never end up in git. `secrets.yaml.example` lists the keys it needs.
+never end up in git. `secrets.yaml.example` lists the keys it needs. Wi-Fi
+is shared; every other secret is prefixed with the device name
+(`projector_…`) so devices never share keys or passwords.
 
 **ESPHome add-on in Home Assistant:** click **Secrets** (top right of the
 ESPHome dashboard), add the lines from `secrets.yaml.example` with your own
