@@ -10,11 +10,12 @@
 The configs read passwords and keys from a separate `secrets.yaml`, so they
 never end up in git. `secrets.yaml.example` lists the keys it needs. Wi-Fi
 is shared; every other secret is prefixed with the device name
-(`projector_…`) so devices never share keys or passwords.
+and two underscores (`projector__…`), the format the ESPHome app uses
+for scoped secrets, so devices never share keys or passwords.
 
 **ESPHome add-on in Home Assistant:** click **Secrets** (top right of the
 ESPHome dashboard), add the lines from `secrets.yaml.example` with your own
-values, and save. For `projector_api_key`, copy a fresh key from the
+values, and save. For `projector__api_key`, copy a fresh key from the
 [ESPHome API docs](https://esphome.io/components/api/) (the page shows a
 randomly generated one). Then create a new device called `projector`, open
 **Edit**, replace its contents with `projector.yaml`, and save.
@@ -91,10 +92,10 @@ and has its antenna attached.
 
 ### Flash
 
-1. In the add-on's **Secrets**, add `projector_screen_api_key` (a fresh key
+1. In the add-on's **Secrets**, add `projector-screen__api_key` (a fresh key
    from the [ESPHome API docs](https://esphome.io/components/api/), different
-   from the projector's), `projector_screen_ota_password` and
-   `projector_screen_fallback_ap_password`. The Wi-Fi lines are shared with
+   from the projector's), `projector-screen__ota_password` and
+   `projector-screen__fallback_ap_password`. The Wi-Fi lines are shared with
    the projector.
 2. Create a new device called `projector-screen`, open **Edit**, replace its
    contents with `projector-screen.yaml`, and save.
