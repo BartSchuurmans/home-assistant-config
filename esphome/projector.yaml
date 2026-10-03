@@ -1,0 +1,209 @@
+# Sony VPL-HW10 projector over RS-232
+#
+# Board: ESP32-C3 RS232 Adapter (Leotro Engineering, TinyTronics 007406),
+# plugged into the projector's female DB9 port through a DB9 null-modem
+# (cross) adapter, female on the adapter side, male on the projector side.
+# https://github.com/Leotro-Engineering/ESP32-C3-RS232-Adapter
+#
+# Sony protocol: 38400 baud, 8E1, 8-byte frames
+#   A9 [item hi] [item lo] [type] [data hi] [data lo] [checksum] 9A
+# type: 00 = set, 01 = get, 02 = reply, 03 = ack/nak
+# checksum = OR of bytes 2-6 (item hi .. data lo)
+#
+# Power status (item 01 02) data:
+#   0 standby, 1 start up, 2 startup lamp, 3 power on,
+#   4 cooling 1, 5 cooling 2, 6 saving cooling 1, 7 saving cooling 2,
+#   8 saving standby
+
+substitutions:
+  name: projector
+  friendly_name: Projector
+  # Adapter UART pins. They are fixed by the board's SP3232 line driver
+  # (DB9 pin 3 = TX, pin 2 = RX), so swapping them does not swap the RS-232
+  # lines. The projector needs a null-modem (cross) adapter instead.
+  tx_pin: GPIO10
+  rx_pin: GPIO4
+  poll_interval: 5s
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+logger:
+  level: DEBUG
+
+api:
+  encryption:
+    key: !secret projector__api_key
+
+ota:
+  - platform: esphome
+    # Uploads use the api encryption key above.
+    encryption: {}
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${name} fallback"
+    password: !secret projector__fallback_ap_password
+
+captive_portal:
+
+uart:
+  id: sony
+  tx_pin: ${tx_pin}
+  rx_pin: ${rx_pin}
+  baud_rate: 38400
+  data_bits: 8
+  parity: EVEN
+  stop_bits: 1
+  # Logs every byte sent and received; drop this once the link works.
+  debug:
+    direction: BOTH
+    dummy_receiver: false
+
+globals:
+  # Last power status code received, -1 until the projector answers.
+  - id: power_status
+    type: int
+    initial_value: "-1"
+  # millis() of the last valid frame, to tell whether the link works.
+  - id: last_rx
+    type: uint32_t
+    initial_value: "0"
+
+script:
+  - id: query_power_status
+    mode: single
+    then:
+      - uart.write:
+          id: sony
+          data: [0xA9, 0x01, 0x02, 0x01, 0x00, 0x00, 0x03, 0x9A]
+
+  # Re-query a few times after a power command so HA follows the
+  # standby -> starting -> on (or on -> cooling -> standby) sequence quickly.
+  - id: query_after_command
+    mode: restart
+    then:
+      - delay: 1s
+      - script.execute: query_power_status
+      - delay: 2s
+      - script.execute: query_power_status
+
+interval:
+  - interval: ${poll_interval}
+    then:
+      - script.execute: query_power_status
+
+  # Read incoming bytes and parse complete Sony frames.
+  - interval: 50ms
+    then:
+      - lambda: |-
+          static std::vector<uint8_t> buf;
+          uint8_t b;
+          while (id(sony).available() && id(sony).read_byte(&b)) {
+            // Resync on the start byte.
+            if (buf.empty() && b != 0xA9) continue;
+            buf.push_back(b);
+            if (buf.size() < 8) continue;
+
+            std::vector<uint8_t> f(buf);
+            buf.clear();
+            if (f[7] != 0x9A) {
+              ESP_LOGW("sony", "Bad frame end: %s", format_hex_pretty(f).c_str());
+              continue;
+            }
+            uint8_t sum = f[1] | f[2] | f[3] | f[4] | f[5];
+            if (sum != f[6]) {
+              ESP_LOGW("sony", "Bad checksum: %s", format_hex_pretty(f).c_str());
+              continue;
+            }
+            id(last_rx) = millis();
+
+            uint16_t item = (f[1] << 8) | f[2];
+            uint8_t type = f[3];
+            uint16_t data = (f[4] << 8) | f[5];
+
+            if (type == 0x03) {
+              // ACK is data 00 00; anything else is a NAK/error code.
+              if (item != 0x0000 || data != 0x0000)
+                ESP_LOGW("sony", "NAK: %s", format_hex_pretty(f).c_str());
+              continue;
+            }
+            if (item == 0x0102 && type == 0x02) {
+              int status = data;
+              if (status != id(power_status)) {
+                ESP_LOGI("sony", "Power status %d", status);
+                id(power_status) = status;
+              }
+              id(power_status_code).publish_state(status);
+              continue;
+            }
+            ESP_LOGD("sony", "Unhandled frame: %s", format_hex_pretty(f).c_str());
+          }
+
+switch:
+  - platform: template
+    id: power
+    name: Power
+    icon: mdi:projector
+    # On while starting up or running; off in standby and while cooling.
+    lambda: |-
+      int s = id(power_status);
+      if (s < 0) return {};
+      return s >= 1 && s <= 3;
+    turn_on_action:
+      - uart.write:
+          id: sony
+          data: [0xA9, 0x17, 0x2E, 0x00, 0x00, 0x00, 0x3F, 0x9A]
+      - script.execute: query_after_command
+    turn_off_action:
+      - uart.write:
+          id: sony
+          data: [0xA9, 0x17, 0x2F, 0x00, 0x00, 0x00, 0x3F, 0x9A]
+      - script.execute: query_after_command
+
+sensor:
+  - platform: template
+    id: power_status_code
+    name: Power status code
+    icon: mdi:numeric
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    filters:
+      - delta: 1
+
+text_sensor:
+  - platform: template
+    name: Power status
+    icon: mdi:projector
+    update_interval: 1s
+    lambda: |-
+      switch (id(power_status)) {
+        case 0: case 8: return {"standby"};
+        case 1: case 2: return {"starting"};
+        case 3: return {"on"};
+        case 4: case 5: case 6: case 7: return {"cooling"};
+        case -1: return {"unknown"};
+        default: return {"status " + std::to_string(id(power_status))};
+      }
+    filters:
+      - lambda: |-
+          static std::string last;
+          if (x == last) return {};
+          last = x;
+          return x;
+
+binary_sensor:
+  - platform: template
+    name: Connected
+    device_class: connectivity
+    entity_category: diagnostic
+    lambda: |-
+      return id(last_rx) != 0 && millis() - id(last_rx) < 15000;
