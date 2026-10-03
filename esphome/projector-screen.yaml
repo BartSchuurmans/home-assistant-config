@@ -1,0 +1,155 @@
+# Top-Vision motorised projector screen over 433 MHz
+#
+# Board: Olimex ESP32-DevKit-LiPo with a CC1101 433 MHz module.
+# The ESP32 replays the screen remote's codes; the screen's own receiver and
+# wall controller keep handling the end limits, so the cover here is
+# time based and only tracks the position it expects.
+#
+# CC1101 wiring (module pin -> ESP32):
+#   VCC  -> 3.3V        GND  -> GND
+#   SCK  -> GPIO18      MOSI -> GPIO23
+#   MISO -> GPIO19      CSN  -> GPIO5
+#   GDO0 -> GPIO26 (TX data in)
+#   GDO2 -> GPIO27 (RX data out)
+#
+# Codes: flash once, press each remote button and read the log, then fill in
+# the send_* scripts below (see README.md).
+
+substitutions:
+  name: projector-screen
+  friendly_name: Projector screen
+  gdo0_pin: GPIO26
+  gdo2_pin: GPIO27
+  # Measure with a stopwatch from fully up to fully down and back.
+  down_duration: 30s
+  up_duration: 30s
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32-devkitlipo
+  framework:
+    type: esp-idf
+
+logger:
+  level: DEBUG
+
+api:
+  encryption:
+    key: !secret projector_screen_api_key
+
+ota:
+  - platform: esphome
+    password: !secret projector_screen_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${name} fallback"
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+
+cc1101:
+  id: radio
+  cs_pin: GPIO5
+  # Shared with remote_transmitter: CC1101 drives it while receiving and
+  # the ESP32 drives it while sending.
+  gdo0_pin:
+    number: ${gdo0_pin}
+    allow_other_uses: true
+  frequency: 433.92MHz
+  modulation_type: ASK/OOK
+  output_power: 10
+
+remote_transmitter:
+  pin:
+    number: ${gdo0_pin}
+    allow_other_uses: true
+  carrier_duty_percent: 100%
+  non_blocking: false
+  on_transmit:
+    then:
+      - cc1101.begin_tx: radio
+  on_complete:
+    then:
+      - cc1101.begin_rx: radio
+
+remote_receiver:
+  pin: ${gdo2_pin}
+  # Logs every recognised code; this is how the remote gets captured.
+  # Nothing showing up? Add `raw` here (it is noisy) to see the bare timings.
+  dump:
+    - dooya
+    - rc_switch
+    - nexa
+    - brennenstuhl
+    - keeloq
+  tolerance: 50%
+  filter: 250us
+  idle: 4ms
+  buffer_size: 2kb
+
+script:
+  # Fill these in with the captured codes. Examples for the protocols the
+  # log can show (copy the values from the "Received ..." line):
+  #
+  #   - remote_transmitter.transmit_dooya:
+  #       id: 0x123456
+  #       channel: 0x01
+  #       button: 0x3
+  #       check: 0x3
+  #       repeat: 5
+  #
+  #   - remote_transmitter.transmit_rc_switch_raw:
+  #       code: "001011000100100010000001"
+  #       protocol: 1
+  #       repeat: 10
+  #
+  #   - remote_transmitter.transmit_raw:
+  #       code: [4950, -1500, 350, -700, ...]
+  #       repeat: 5
+  - id: send_down
+    then:
+      - logger.log:
+          level: WARN
+          format: "Screen down code not captured yet"
+
+  - id: send_up
+    then:
+      - logger.log:
+          level: WARN
+          format: "Screen up code not captured yet"
+
+  - id: send_stop
+    then:
+      - logger.log:
+          level: WARN
+          format: "Screen stop code not captured yet"
+
+cover:
+  - platform: time_based
+    id: screen
+    name: None
+    device_class: shade
+    assumed_state: true
+    # The screen stops itself at its end limits, so no stop is sent there,
+    # and down/up can be pressed again to resync if the position drifts.
+    has_built_in_endstop: true
+    # Cover "closed" is the screen fully down in front of the wall.
+    close_action:
+      - script.execute: send_down
+    close_duration: ${down_duration}
+    open_action:
+      - script.execute: send_up
+    open_duration: ${up_duration}
+    stop_action:
+      - script.execute: send_stop

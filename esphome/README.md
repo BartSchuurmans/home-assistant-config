@@ -3,6 +3,7 @@
 | File | Device | Board |
 | --- | --- | --- |
 | [projector.yaml](projector.yaml) | Sony VPL-HW10 projector, RS-232 | ESP32-C3 RS232 Adapter |
+| [projector-screen.yaml](projector-screen.yaml) | Top-Vision projector screen, 433 MHz | Olimex ESP32-DevKit-LiPo + CC1101 |
 
 ## Secrets
 
@@ -49,3 +50,70 @@ Entities:
 The command bytes follow Sony's protocol for the VPL-VW/HW range of that era
 and have not yet been confirmed on this projector. Check the logs for `NAK` or
 `Unhandled frame` lines if something doesn't react.
+
+## Projector screen (Top-Vision, 433 MHz)
+
+An ESP32 with a CC1101 radio replays the screen remote's codes. The screen's
+own receiver and wall controller still stop it at the end limits; Home
+Assistant gets a time based cover (**closed** is down, **open** is up) that
+tracks where it expects the screen to be.
+
+### Wiring
+
+CC1101 module to Olimex ESP32-DevKit-LiPo. Use 3.3 V, never 5 V:
+
+| CC1101 | ESP32 |
+| --- | --- |
+| VCC | 3.3V |
+| GND | GND |
+| SCK | GPIO18 |
+| MOSI | GPIO23 |
+| MISO (SO) | GPIO19 |
+| CSN | GPIO5 |
+| GDO0 | GPIO26 |
+| GDO2 | GPIO27 |
+
+Make sure the module is the 433 MHz version (antenna and marking say 433)
+and has its antenna attached.
+
+### Flash
+
+1. Connect the board with USB and run `esphome run projector-screen.yaml`.
+   Later updates go over the air.
+2. Add the device in Home Assistant with the API key from `secrets.yaml`.
+   Until the codes are filled in, the cover moves in HA but sends nothing and
+   logs `code not captured yet`.
+
+### Capture the remote
+
+1. Run `esphome logs projector-screen.yaml` and hold the remote near the board.
+2. Press **down**, **up** and **stop** a few times each, one button at a time.
+   Each press should log a line like
+   `Received Dooya: id=0x123456, channel=1, button=3, check=3` or
+   `Received RCSwitch Raw: protocol=1 data='0010...'`. Note which line belongs
+   to which button and that it is the same on every press.
+3. Paste the values into the `send_down`, `send_up` and `send_stop` scripts
+   in `projector-screen.yaml` (the comment above them has an example per
+   protocol) and flash again.
+4. Measure how long the screen takes to go fully down and fully up, set
+   `down_duration` and `up_duration`, and flash again.
+
+If nothing is logged, add `raw` to the `dump` list and flash: you'll see the
+bare pulse timings instead, which can be replayed with `transmit_raw`. If the
+log shows **KeeLoq**, the remote uses rolling codes and cannot be replayed
+this way.
+
+### Test
+
+1. Put the screen fully up with its own remote, then set the cover to open in
+   HA if it isn't already.
+2. Press close in HA: the screen should go down and HA should show it closed
+   after `down_duration`. Then open, and stop halfway.
+3. Out of range? Move the board closer to the screen or set `output_power` to
+   the maximum of `11`.
+
+### Automation
+
+Import [blueprints/projector-screen.yaml](../blueprints/projector-screen.yaml)
+and pick the projector's **Power status** sensor and the screen cover. The
+screen goes down when the projector starts and up when it starts cooling.
