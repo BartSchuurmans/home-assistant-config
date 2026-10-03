@@ -1,7 +1,8 @@
 # Sony VPL-HW10 projector over RS-232
 #
 # Board: ESP32-C3 RS232 Adapter (Leotro Engineering, TinyTronics 007406),
-# plugged straight into the projector's female DB9 port.
+# plugged into the projector's female DB9 port through a DB9 null-modem
+# (cross) adapter, female on the adapter side, male on the projector side.
 # https://github.com/Leotro-Engineering/ESP32-C3-RS232-Adapter
 #
 # Sony protocol: 38400 baud, 8E1, 8-byte frames
@@ -17,7 +18,9 @@
 substitutions:
   name: projector
   friendly_name: Projector
-  # Adapter UART pins. If the projector never answers, swap these two.
+  # Adapter UART pins. They are fixed by the board's SP3232 line driver
+  # (DB9 pin 3 = TX, pin 2 = RX), so swapping them does not swap the RS-232
+  # lines. The projector needs a null-modem (cross) adapter instead.
   tx_pin: GPIO10
   rx_pin: GPIO4
   poll_interval: 5s

@@ -24,8 +24,10 @@ next to the config and fill it in.
 
 ## Projector (Sony VPL-HW10)
 
-The adapter plugs straight into the projector's RS-232 port (female DB9) and
-is powered over USB-C. UART is TX `GPIO10`, RX `GPIO4`, 38400 baud 8E1.
+The adapter is wired like a PC serial port (DB9 pin 3 TX, pin 2 RX) and so is
+the projector, so Sony requires a cross cable between them. Put a DB9
+**null-modem adapter** (female on one side, male on the other) between the
+adapter and the projector's female RS-232 port. Power the adapter over USB-C. UART is TX `GPIO10`, RX `GPIO4`, 38400 baud 8E1.
 
 Entities:
 
@@ -54,9 +56,11 @@ Entities:
 2. Every 5 s the device sends the status query `A9 01 02 01 00 00 03 9A`. A
    working link answers with something like `A9 01 02 02 00 00 03 9A`
    (standby) and **Connected** turns on.
-3. No answer at all: swap `tx_pin` and `rx_pin` in the substitutions, reflash.
-   Also check the projector's menu: if there's a low-power standby mode,
-   RS-232 may be off in standby, so set it to standard.
+3. No answer at all (only `>>>` lines): check the null-modem adapter is in
+   place. Swapping `tx_pin` and `rx_pin` does not help on this board, because
+   the line driver fixes which DB9 pins send and receive. Also check the
+   projector's menu: if there's a low-power standby mode, RS-232 may be off
+   in standby, so set it to standard, or test with the projector switched on.
 4. Toggle **Power** in HA and watch **Power status** go
    `standby → starting → on`, then `cooling → standby` after switching off.
 
