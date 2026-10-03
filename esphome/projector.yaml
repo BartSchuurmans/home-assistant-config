@@ -36,18 +36,18 @@ logger:
 
 api:
   encryption:
-    key: !secret projector_api_key
+    key: !secret projector__api_key
 
 ota:
   - platform: esphome
-    password: !secret projector_ota_password
+    password: !secret projector__ota_password
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   ap:
     ssid: "${name} fallback"
-    password: !secret projector_fallback_ap_password
+    password: !secret projector__fallback_ap_password
 
 captive_portal:
 

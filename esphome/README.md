@@ -9,11 +9,12 @@
 The configs read passwords and keys from a separate `secrets.yaml`, so they
 never end up in git. `secrets.yaml.example` lists the keys it needs. Wi-Fi
 is shared; every other secret is prefixed with the device name
-(`projector_…`) so devices never share keys or passwords.
+and two underscores (`projector__…`), the format the ESPHome app uses
+for scoped secrets, so devices never share keys or passwords.
 
 **ESPHome add-on in Home Assistant:** click **Secrets** (top right of the
 ESPHome dashboard), add the lines from `secrets.yaml.example` with your own
-values, and save. For `projector_api_key`, copy a fresh key from the
+values, and save. For `projector__api_key`, copy a fresh key from the
 [ESPHome API docs](https://esphome.io/components/api/) (the page shows a
 randomly generated one). Then create a new device called `projector`, open
 **Edit**, replace its contents with `projector.yaml`, and save.
