@@ -89,27 +89,39 @@ and has its antenna attached.
 
 ### Flash
 
-1. Connect the board with USB and run `esphome run projector-screen.yaml`.
-   Later updates go over the air.
-2. Add the device in Home Assistant with the API key from `secrets.yaml`.
+1. In the add-on's **Secrets**, add `projector_screen_api_key` (a fresh key
+   from the [ESPHome API docs](https://esphome.io/components/api/), different
+   from the projector's) and `projector_screen_ota_password`. The Wi-Fi lines
+   are shared with the projector.
+2. Create a new device called `projector-screen`, open **Edit**, replace its
+   contents with `projector-screen.yaml`, and save.
+3. First flash over USB: **Install** → **Manual download** → **Factory
+   format**, then flash that file from [web.esphome.io](https://web.esphome.io)
+   in Chrome or Edge with the board plugged into your computer. Later updates
+   go over Wi-Fi: **Install** → **Wirelessly**.
+4. Home Assistant discovers the device; add it with the API key from Secrets.
    Until the codes are filled in, the cover moves in HA but sends nothing and
    logs `code not captured yet`.
 
+With the CLI instead: `esphome run projector-screen.yaml` and
+`esphome logs projector-screen.yaml`.
+
 ### Capture the remote
 
-1. Run `esphome logs projector-screen.yaml` and hold the remote near the board.
-2. Press **down**, **up** and **stop** a few times each, one button at a time.
-   Each press should log a line like
-   `Received Dooya: id=0x123456, channel=1, button=3, check=3` or
+1. Power the board near the screen and click **Logs** on the device in the
+   add-on (choose **Wirelessly**).
+2. Press **down**, **up** and **stop** on the remote a few times each, one
+   button at a time, with the remote near the board. Each press should log a
+   line like `Received Dooya: id=0x123456, channel=1, button=3, check=3` or
    `Received RCSwitch Raw: protocol=1 data='0010...'`. Note which line belongs
    to which button and that it is the same on every press.
-3. Paste the values into the `send_down`, `send_up` and `send_stop` scripts
-   in `projector-screen.yaml` (the comment above them has an example per
-   protocol) and flash again.
-4. Measure how long the screen takes to go fully down and fully up, set
-   `down_duration` and `up_duration`, and flash again.
+3. Click **Edit** and paste the values into the `send_down`, `send_up` and
+   `send_stop` scripts (the comment above them has an example per protocol),
+   then **Install** → **Wirelessly**.
+4. Time how long the screen takes to go fully down and fully up, set
+   `down_duration` and `up_duration` at the top, and install again.
 
-If nothing is logged, add `raw` to the `dump` list and flash: you'll see the
+If nothing is logged, add `raw` to the `dump` list and install: you'll see the
 bare pulse timings instead, which can be replayed with `transmit_raw`. If the
 log shows **KeeLoq**, the remote uses rolling codes and cannot be replayed
 this way.
