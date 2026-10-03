@@ -93,8 +93,9 @@ and has its antenna attached.
 
 1. In the add-on's **Secrets**, add `projector_screen_api_key` (a fresh key
    from the [ESPHome API docs](https://esphome.io/components/api/), different
-   from the projector's) and `projector_screen_ota_password`. The Wi-Fi lines
-   are shared with the projector.
+   from the projector's), `projector_screen_ota_password` and
+   `projector_screen_fallback_ap_password`. The Wi-Fi lines are shared with
+   the projector.
 2. Create a new device called `projector-screen`, open **Edit**, replace its
    contents with `projector-screen.yaml`, and save.
 3. First flash over USB: **Install** → **Manual download** → **Factory
