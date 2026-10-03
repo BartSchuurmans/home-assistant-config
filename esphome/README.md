@@ -6,9 +6,18 @@
 
 ## Secrets
 
-Copy `secrets.yaml.example` to `secrets.yaml` (git-ignored) and fill it in.
-If you use the ESPHome add-on in Home Assistant, put the same keys in its
-`secrets.yaml` instead.
+The configs read passwords and keys from a separate `secrets.yaml`, so they
+never end up in git. `secrets.yaml.example` lists the keys it needs.
+
+**ESPHome add-on in Home Assistant:** click **Secrets** (top right of the
+ESPHome dashboard), add the lines from `secrets.yaml.example` with your own
+values, and save. For `projector_api_key`, copy a fresh key from the
+[ESPHome API docs](https://esphome.io/components/api/) (the page shows a
+randomly generated one). Then create a new device called `projector`, open
+**Edit**, replace its contents with `projector.yaml`, and save.
+
+**ESPHome CLI:** copy `secrets.yaml.example` to `secrets.yaml` (git-ignored)
+next to the config and fill it in.
 
 ## Projector (Sony VPL-HW10)
 
@@ -26,10 +35,12 @@ Entities:
 
 ### Flash
 
-1. First flash over USB: connect the adapter to your computer with USB-C and run
-   `esphome run projector.yaml` (or use the ESPHome add-on / web.esphome.io).
-   If it isn't detected, hold BOOT while plugging it in.
-2. Later updates go over the air: `esphome run projector.yaml --device projector.local`.
+1. First flash over USB. In the add-on: **Install** → **Manual download** →
+   **Factory format**, then flash that file from [web.esphome.io](https://web.esphome.io)
+   in Chrome or Edge with the adapter plugged into your computer. With the CLI:
+   `esphome run projector.yaml`. If it isn't detected, hold BOOT while plugging it in.
+2. Later updates go over Wi-Fi: **Install** → **Wirelessly** in the add-on, or
+   `esphome run projector.yaml --device projector.local`.
 3. Home Assistant discovers the device; add it with the API key from `secrets.yaml`.
 
 ### Test
