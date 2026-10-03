@@ -1,0 +1,81 @@
+blueprint:
+  name: Projector screen follows projector
+  description: |
+    Lowers the projector screen when the projector starts and raises it again
+    when the projector cools down or goes to standby.
+
+    Made for the ESPHome projector (Power status sensor: standby, starting,
+    on, cooling) and the time based screen cover, where closed means down.
+  domain: automation
+  author: Bart Schuurmans
+  source_url: https://github.com/BartSchuurmans/home-assistant-config/blob/main/blueprints/projector-screen.yaml
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    projector_status:
+      name: Projector power status
+      description: "Sensor reporting standby, starting, on or cooling"
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+    screen:
+      name: Projector screen
+      description: "Screen cover; closed is down, open is up"
+      selector:
+        entity:
+          filter:
+            - domain: cover
+
+mode: restart
+
+triggers:
+  - trigger: state
+    entity_id: !input projector_status
+    to:
+      - starting
+      - "on"
+    not_from:
+      - unknown
+      - unavailable
+    id: down
+  - trigger: state
+    entity_id: !input projector_status
+    to:
+      - cooling
+      - standby
+    not_from:
+      - unknown
+      - unavailable
+    id: up
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: down
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input screen
+                state:
+                  - closed
+                  - closing
+        sequence:
+          - action: cover.close_cover
+            target:
+              entity_id: !input screen
+      - conditions:
+          - condition: trigger
+            id: up
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input screen
+                state:
+                  - open
+                  - opening
+        sequence:
+          - action: cover.open_cover
+            target:
+              entity_id: !input screen
