@@ -35,8 +35,8 @@ Entities:
 ### Test
 
 1. Plug the adapter into the projector, power it from a USB charger, and open the
-   logs (`esphome logs projector.yaml`). Set `logger: level: VERY_VERBOSE` to see
-   every byte.
+   logs (`esphome logs projector.yaml`). The UART debug lines show every byte
+   sent (`>>>`) and received (`<<<`).
 2. Every 5 s the device sends the status query `A9 01 02 01 00 00 03 9A`. A
    working link answers with something like `A9 01 02 02 00 00 03 9A`
    (standby) and **Connected** turns on.

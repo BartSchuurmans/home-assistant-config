@@ -32,7 +32,6 @@ esp32:
     type: esp-idf
 
 logger:
-  # Set to VERY_VERBOSE to see every byte on the bus while testing.
   level: DEBUG
 
 api:
@@ -60,6 +59,7 @@ uart:
   data_bits: 8
   parity: EVEN
   stop_bits: 1
+  # Logs every byte sent and received; drop this once the link works.
   debug:
     direction: BOTH
     dummy_receiver: false
