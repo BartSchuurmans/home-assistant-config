@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | [projector.yaml](projector.yaml) | Sony VPL-HW10 projector, RS-232 | ESP32-C3 RS232 Adapter |
 | [ducobox.yaml](ducobox.yaml) | DucoBox Silent 4215 ventilation, 868 MHz RF | Wemos D1 Mini + CC1101 |
+| [projector-screen.yaml](projector-screen.yaml) | Top-Vision projector screen, 433 MHz | Olimex ESP32-DevKit-LiPo + CC1101 |
 
 ## Secrets
 
@@ -153,3 +154,82 @@ switch. The Permanent presets stay until you change them.
 
 After a reboot the gateway requests auto, so both sides agree on the mode.
 That also ends a boost that was running.
+
+## Projector screen (Top-Vision, 433 MHz)
+
+An ESP32 with a CC1101 radio replays the screen remote's codes. The screen's
+own receiver and wall controller still stop it at the end limits; Home
+Assistant gets a time based cover (**closed** is down, **open** is up) that
+tracks where it expects the screen to be.
+
+### Wiring
+
+CC1101 module to Olimex ESP32-DevKit-LiPo. Use 3.3 V, never 5 V:
+
+| CC1101 | ESP32 |
+| --- | --- |
+| VCC | 3.3V |
+| GND | GND |
+| SCK | GPIO18 |
+| MOSI | GPIO23 |
+| MISO (SO) | GPIO19 |
+| CSN | GPIO25 |
+| GDO0 | GPIO26 |
+| GDO2 | GPIO27 |
+
+Make sure the module is the 433 MHz version (antenna and marking say 433)
+and has its antenna attached.
+
+### Flash
+
+1. In the add-on's **Secrets**, add `projector-screen__api_key` (a fresh key
+   from the [ESPHome API docs](https://esphome.io/components/api/), different
+   from the projector's) and `projector-screen__fallback_ap_password`. The
+   Wi-Fi lines are shared with the projector.
+2. Create a new device called `projector-screen`, open **Edit**, replace its
+   contents with `projector-screen.yaml`, and save.
+3. First flash over USB: **Install** → **Manual download** → **Factory
+   format**, then flash that file from [web.esphome.io](https://web.esphome.io)
+   in Chrome or Edge with the board plugged into your computer. Later updates
+   go over Wi-Fi: **Install** → **Wirelessly**.
+4. Home Assistant discovers the device; add it with the API key from Secrets.
+   Until the codes are filled in, the cover moves in HA but sends nothing and
+   logs `code not captured yet`.
+
+With the CLI instead: `esphome run projector-screen.yaml` and
+`esphome logs projector-screen.yaml`.
+
+### Capture the remote
+
+1. Power the board near the screen and click **Logs** on the device in the
+   add-on (choose **Wirelessly**).
+2. Press **down**, **up** and **stop** on the remote a few times each, one
+   button at a time, with the remote near the board. Each press should log a
+   line like `Received Dooya: id=0x123456, channel=1, button=3, check=3` or
+   `Received RCSwitch Raw: protocol=1 data='0010...'`. Note which line belongs
+   to which button and that it is the same on every press.
+3. Click **Edit** and paste the values into the `send_down`, `send_up` and
+   `send_stop` scripts (the comment above them has an example per protocol),
+   then **Install** → **Wirelessly**.
+4. Time how long the screen takes to go fully down and fully up, set
+   `down_duration` and `up_duration` at the top, and install again.
+
+If nothing is logged, add `raw` to the `dump` list and install: you'll see the
+bare pulse timings instead, which can be replayed with `transmit_raw`. If the
+log shows **KeeLoq**, the remote uses rolling codes and cannot be replayed
+this way.
+
+### Test
+
+1. Put the screen fully up with its own remote, then set the cover to open in
+   HA if it isn't already.
+2. Press close in HA: the screen should go down and HA should show it closed
+   after `down_duration`. Then open, and stop halfway.
+3. Out of range? Move the board closer to the screen or set `output_power` to
+   the maximum of `11`.
+
+### Automation
+
+Import [blueprints/projector-screen.yaml](../blueprints/projector-screen.yaml)
+and pick the projector's **Power status** sensor and the screen cover. The
+screen goes down when the projector starts and up when it starts cooling.
