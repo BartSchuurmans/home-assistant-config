@@ -1,5 +1,5 @@
 blueprint:
-  name: Projector screen follows projector
+  name: Projector Screen follows projector
   description: |
     Lowers the projector screen when the projector starts and raises it again
     when the projector cools down or goes to standby.
@@ -20,7 +20,7 @@ blueprint:
           filter:
             - domain: sensor
     screen:
-      name: Projector screen
+      name: Projector Screen
       description: "Screen cover; closed is down, open is up"
       selector:
         entity:

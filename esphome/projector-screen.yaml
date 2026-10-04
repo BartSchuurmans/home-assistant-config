@@ -17,7 +17,7 @@
 
 substitutions:
   name: projector-screen
-  friendly_name: Projector screen
+  friendly_name: Projector Screen
   gdo0_pin: GPIO26
   gdo2_pin: GPIO27
   # Measure with a stopwatch from fully up to fully down and back.

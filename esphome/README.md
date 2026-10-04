@@ -155,7 +155,7 @@ switch. The Permanent presets stay until you change them.
 After a reboot the gateway requests auto, so both sides agree on the mode.
 That also ends a boost that was running.
 
-## Projector screen (Top-Vision, 433 MHz)
+## Projector Screen (Top-Vision, 433 MHz)
 
 An ESP32 with a CC1101 radio replays the screen remote's codes. The motor has
 no limit switches; the wall controller stores the end limits and stops it
