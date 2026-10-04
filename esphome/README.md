@@ -157,10 +157,11 @@ That also ends a boost that was running.
 
 ## Projector screen (Top-Vision, 433 MHz)
 
-An ESP32 with a CC1101 radio replays the screen remote's codes. The screen's
-own receiver and wall controller still stop it at the end limits; Home
-Assistant gets a time based cover (**closed** is down, **open** is up) that
-tracks where it expects the screen to be.
+An ESP32 with a CC1101 radio replays the screen remote's codes. The motor has
+no limit switches; the wall controller stores the end limits and stops it
+there, and the ESP32 only talks to that controller. Home Assistant gets a time
+based cover (**closed** is down, **open** is up) that tracks where it expects
+the screen to be.
 
 ### Wiring
 
@@ -221,11 +222,17 @@ this way.
 
 ### Test
 
-1. Put the screen fully up with its own remote, then set the cover to open in
+1. Check the end limits first, with the original remote: press **down** once,
+   don't touch anything, and see whether the screen stops by itself at the
+   bottom. Do the same with **up**. Keep your hand on **stop** in case it
+   doesn't. If it stops by itself both ways, `has_built_in_endstop: true` is
+   right. If it overruns, the controller isn't enforcing limits: don't use the
+   cover until they're reprogrammed with the remote.
+2. Put the screen fully up with its own remote, then set the cover to open in
    HA if it isn't already.
-2. Press close in HA: the screen should go down and HA should show it closed
+3. Press close in HA: the screen should go down and HA should show it closed
    after `down_duration`. Then open, and stop halfway.
-3. Out of range? Move the board closer to the screen or set `output_power` to
+4. Out of range? Move the board closer to the screen or set `output_power` to
    the maximum of `11`.
 
 ### Automation

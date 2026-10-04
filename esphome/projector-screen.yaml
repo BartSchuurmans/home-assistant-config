@@ -142,8 +142,10 @@ cover:
     name: None
     device_class: shade
     assumed_state: true
-    # The screen stops itself at its end limits, so no stop is sent there,
-    # and down/up can be pressed again to resync if the position drifts.
+    # The motor has no limit switches, but the wall controller (an "electric
+    # limiter") stores the end limits and stops the motor there. Commands go
+    # through that controller, so no stop is sent at the ends, and down/up can
+    # be pressed again to resync if the position drifts. README.md has a test.
     has_built_in_endstop: true
     # Cover "closed" is the screen fully down in front of the wall.
     close_action:
