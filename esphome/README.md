@@ -29,14 +29,16 @@ next to the config and fill it in.
 The adapter is wired like a PC serial port (DB9 pin 3 TX, pin 2 RX) and so is
 the projector, so Sony requires a cross cable between them. Put a DB9
 **null-modem adapter** (female on one side, male on the other) between the
-adapter and the projector's female RS-232 port. Power the adapter over USB-C. UART is TX `GPIO10`, RX `GPIO4`, 38400 baud 8E1.
+adapter and the projector's female RS-232 port. Power the adapter over USB-C.
+UART is TX `GPIO10`, RX `GPIO4`, 38400 baud 8E1.
 
 Entities:
 
 - **Power** switch: sends the Sony power on/off commands. It reads on while
   the projector is starting or running and off in standby or cooling.
-- **Power status** text sensor: `standby`, `starting`, `on`, `cooling` (or
-  `unknown` until the projector answers). Use this for screen automations.
+- **Power status** text sensor: `Standby`, `Starting`, `On`, `Cooling` (or
+  `Unknown` until the projector answers). Use this for screen automations;
+  the states are capitalized, so match them exactly.
 - **Power status code** (diagnostic): the raw Sony status, 0 to 8.
 - **Connected** (diagnostic): on when a valid frame arrived in the last 15 s.
 
@@ -64,7 +66,7 @@ Entities:
    projector's menu: if there's a low-power standby mode, RS-232 may be off
    in standby, so set it to standard, or test with the projector switched on.
 4. Toggle **Power** in HA and watch **Power status** go
-   `standby → starting → on`, then `cooling → standby` after switching off.
+   `Standby → Starting → On`, then `Cooling → Standby` after switching off.
 
 The command bytes follow Sony's protocol for the VPL-VW/HW range of that era
 and have not yet been confirmed on this projector. Check the logs for `NAK` or
