@@ -184,14 +184,17 @@ text_sensor:
     name: Power status
     icon: mdi:projector
     update_interval: 1s
+    # Capitalized on purpose: a text sensor has no translations in HA, and
+    # the frontend capitalizes some lowercase values (like "on") but not
+    # others, so lowercase states would display inconsistently.
     lambda: |-
       switch (id(power_status)) {
-        case 0: case 8: return {"standby"};
-        case 1: case 2: return {"starting"};
-        case 3: return {"on"};
-        case 4: case 5: case 6: case 7: return {"cooling"};
-        case -1: return {"unknown"};
-        default: return {"status " + std::to_string(id(power_status))};
+        case 0: case 8: return {"Standby"};
+        case 1: case 2: return {"Starting"};
+        case 3: return {"On"};
+        case 4: case 5: case 6: case 7: return {"Cooling"};
+        case -1: return {"Unknown"};
+        default: return {"Status " + std::to_string(id(power_status))};
       }
     filters:
       - lambda: |-
