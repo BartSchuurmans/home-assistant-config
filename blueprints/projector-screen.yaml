@@ -4,8 +4,8 @@ blueprint:
     Lowers the projector screen when the projector starts and raises it again
     when the projector cools down or goes to standby.
 
-    Made for the ESPHome projector (Power status sensor: standby, starting,
-    on, cooling) and the time based screen cover, where closed means down.
+    Made for the ESPHome projector (Power status sensor: Standby, Starting,
+    On, Cooling) and the time based screen cover, where closed means down.
   domain: automation
   author: Bart Schuurmans
   source_url: https://github.com/BartSchuurmans/home-assistant-config/blob/main/blueprints/projector-screen.yaml
@@ -14,7 +14,7 @@ blueprint:
   input:
     projector_status:
       name: Projector power status
-      description: "Sensor reporting standby, starting, on or cooling"
+      description: "Sensor reporting Standby, Starting, On or Cooling"
       selector:
         entity:
           filter:
@@ -33,20 +33,26 @@ triggers:
   - trigger: state
     entity_id: !input projector_status
     to:
-      - starting
-      - "on"
+      - Starting
+      - "On"
+    # HA's own unknown/unavailable, plus the sensor's Unknown before the
+    # projector first answers.
     not_from:
       - unknown
       - unavailable
+      - Unknown
     id: down
   - trigger: state
     entity_id: !input projector_status
     to:
-      - cooling
-      - standby
+      - Cooling
+      - Standby
+    # HA's own unknown/unavailable, plus the sensor's Unknown before the
+    # projector first answers.
     not_from:
       - unknown
       - unavailable
+      - Unknown
     id: up
 
 actions:
