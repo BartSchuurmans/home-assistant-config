@@ -18,7 +18,8 @@
 substitutions:
   name: projector-screen
   friendly_name: Projector Screen
-  gdo0_pin: GPIO26
+  # GDO0 as a bare number: the transmit lambda below needs it too.
+  gdo0_gpio: "26"
   gdo2_pin: GPIO27
   # Remote codes: same 20-bit remote ID, last 4 bits are the button.
   code_up: "101110000110111000110001"
@@ -69,7 +70,7 @@ cc1101:
   # Shared with remote_transmitter: CC1101 drives it while receiving and
   # the ESP32 drives it while sending.
   gdo0_pin:
-    number: ${gdo0_pin}
+    number: GPIO${gdo0_gpio}
     allow_other_uses: true
   frequency: 433.92MHz
   modulation_type: ASK/OOK
@@ -77,13 +78,20 @@ cc1101:
 
 remote_transmitter:
   pin:
-    number: ${gdo0_pin}
+    number: GPIO${gdo0_gpio}
     allow_other_uses: true
   carrier_duty_percent: 100%
   non_blocking: false
   on_transmit:
     then:
-      - cc1101.begin_tx: radio
+      # cc1101.begin_tx switches GDO0 to a plain GPIO output, which cuts the
+      # RMT transmitter off the pin, so the radio would key nothing. Note the
+      # RMT signal routed to the pin, start TX, then route it back.
+      - lambda: |-
+          gpio_io_config_t io;
+          gpio_get_io_config(GPIO_NUM_${gdo0_gpio}, &io);
+          id(radio).begin_tx();
+          esp_rom_gpio_connect_out_signal(${gdo0_gpio}, io.sig_out, false, false);
   on_complete:
     then:
       - cc1101.begin_rx: radio
