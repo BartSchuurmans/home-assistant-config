@@ -24,6 +24,9 @@ substitutions:
   code_up: "101110000110111000110001"
   code_down: "101110000110111000110100"
   code_stop: "101110000110111000110010"
+  # Measured from a raw dump of the remote: about 330 us per pulse, with
+  # protocol 1's shape (one = 3 on 1 off, zero = 1 on 3 off, sync 1 on 31 off).
+  pulse_length: "330"
   # Measure with a stopwatch from fully up to fully down and back.
   down_duration: 30s
   up_duration: 30s
@@ -101,27 +104,31 @@ remote_receiver:
 
 script:
   # Codes captured from the original remote (EV1527 style, RCSwitch
-  # protocol 1): a 20-bit remote ID followed by a 4-bit button. Each press
-  # repeats the code so the controller catches it, like the remote does.
+  # protocol 1 shape at the remote's own pulse length): a 20-bit remote ID
+  # followed by a 4-bit button. Each press repeats the code so the
+  # controller catches it, like the remote does.
   - id: send_down
     then:
       - remote_transmitter.transmit_rc_switch_raw:
           code: ${code_down}
-          protocol: 1
+          protocol:
+            pulse_length: ${pulse_length}
           repeat: 10
 
   - id: send_up
     then:
       - remote_transmitter.transmit_rc_switch_raw:
           code: ${code_up}
-          protocol: 1
+          protocol:
+            pulse_length: ${pulse_length}
           repeat: 10
 
   - id: send_stop
     then:
       - remote_transmitter.transmit_rc_switch_raw:
           code: ${code_stop}
-          protocol: 1
+          protocol:
+            pulse_length: ${pulse_length}
           repeat: 10
 
 cover:
