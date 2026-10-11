@@ -12,14 +12,18 @@
 #   GDO0 -> GPIO26 (TX data in)
 #   GDO2 -> GPIO27 (RX data out)
 #
-# Codes: flash once, press each remote button and read the log, then fill in
-# the send_* scripts below (see README.md).
+# Codes: captured from the original remote with the receiver below; see
+# README.md to capture them again for a different remote.
 
 substitutions:
   name: projector-screen
   friendly_name: Projector Screen
   gdo0_pin: GPIO26
   gdo2_pin: GPIO27
+  # Remote codes: same 20-bit remote ID, last 4 bits are the button.
+  code_up: "101110000110111000110001"
+  code_down: "101110000110111000110100"
+  code_stop: "101110000110111000110010"
   # Measure with a stopwatch from fully up to fully down and back.
   down_duration: 30s
   up_duration: 30s
@@ -100,41 +104,29 @@ remote_receiver:
   buffer_size: 2kb
 
 script:
-  # Fill these in with the captured codes. Examples for the protocols the
-  # log can show (copy the values from the "Received ..." line):
-  #
-  #   - remote_transmitter.transmit_dooya:
-  #       id: 0x123456
-  #       channel: 0x01
-  #       button: 0x3
-  #       check: 0x3
-  #       repeat: 5
-  #
-  #   - remote_transmitter.transmit_rc_switch_raw:
-  #       code: "001011000100100010000001"
-  #       protocol: 1
-  #       repeat: 10
-  #
-  #   - remote_transmitter.transmit_raw:
-  #       code: [4950, -1500, 350, -700, ...]
-  #       repeat: 5
+  # Codes captured from the original remote (EV1527 style, RCSwitch
+  # protocol 1): a 20-bit remote ID followed by a 4-bit button. Each press
+  # repeats the code so the controller catches it, like the remote does.
   - id: send_down
     then:
-      - logger.log:
-          level: WARN
-          format: "Screen down code not captured yet"
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: ${code_down}
+          protocol: 1
+          repeat: 10
 
   - id: send_up
     then:
-      - logger.log:
-          level: WARN
-          format: "Screen up code not captured yet"
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: ${code_up}
+          protocol: 1
+          repeat: 10
 
   - id: send_stop
     then:
-      - logger.log:
-          level: WARN
-          format: "Screen stop code not captured yet"
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: ${code_stop}
+          protocol: 1
+          repeat: 10
 
 cover:
   - platform: time_based

@@ -194,31 +194,28 @@ and has its antenna attached.
    in Chrome or Edge with the board plugged into your computer. Later updates
    go over Wi-Fi: **Install** → **Wirelessly**.
 4. Home Assistant discovers the device; add it with the API key from Secrets.
-   Until the codes are filled in, the cover moves in HA but sends nothing and
-   logs `code not captured yet`.
 
 With the CLI instead: `esphome run projector-screen.yaml` and
 `esphome logs projector-screen.yaml`.
 
-### Capture the remote
+### Remote codes
 
-1. Power the board near the screen and click **Logs** on the device in the
-   add-on (choose **Wirelessly**).
-2. Press **down**, **up** and **stop** on the remote a few times each, one
-   button at a time, with the remote near the board. Each press should log a
-   line like `Received Dooya: id=0x123456, channel=1, button=3, check=3` or
-   `Received RCSwitch Raw: protocol=1 data='0010...'`. Note which line belongs
-   to which button and that it is the same on every press.
-3. Click **Edit** and paste the values into the `send_down`, `send_up` and
-   `send_stop` scripts (the comment above them has an example per protocol),
-   then **Install** → **Wirelessly**.
-4. Time how long the screen takes to go fully down and fully up, set
-   `down_duration` and `up_duration` at the top, and install again.
+The codes of the screen's remote are already in the config (`code_up`,
+`code_down`, `code_stop` at the top). It sends fixed RCSwitch protocol 1
+codes: the same 20-bit remote ID followed by a 4-bit button (`0001` up,
+`0100` down, `0010` stop).
 
-If nothing is logged, add `raw` to the `dump` list and install: you'll see the
-bare pulse timings instead, which can be replayed with `transmit_raw`. If the
-log shows **KeeLoq**, the remote uses rolling codes and cannot be replayed
-this way.
+To capture them again, for example for a replacement remote: open **Logs**,
+press each button a few times near the board, and copy the `data='...'` value
+from the `Received RCSwitch Raw` lines into the substitutions. If nothing is
+logged, add `raw` to the `dump` list to see the bare pulse timings. If the log
+shows **KeeLoq**, the remote uses rolling codes and cannot be replayed.
+
+### Travel time
+
+Time how long the screen takes to go fully down and fully up with a
+stopwatch, set `down_duration` and `up_duration` at the top, and install
+again.
 
 ### Test
 
