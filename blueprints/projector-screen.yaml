@@ -1,0 +1,87 @@
+blueprint:
+  name: Projector Screen follows projector
+  description: |
+    Lowers the projector screen when the projector starts and raises it again
+    when the projector cools down or goes to standby.
+
+    Made for the ESPHome projector (Power status sensor: Standby, Starting,
+    On, Cooling) and the time based screen cover, where closed means down.
+  domain: automation
+  author: Bart Schuurmans
+  source_url: https://github.com/BartSchuurmans/home-assistant-config/blob/main/blueprints/projector-screen.yaml
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    projector_status:
+      name: Projector power status
+      description: "Sensor reporting Standby, Starting, On or Cooling"
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+    screen:
+      name: Projector Screen
+      description: "Screen cover; closed is down, open is up"
+      selector:
+        entity:
+          filter:
+            - domain: cover
+
+mode: restart
+
+triggers:
+  - trigger: state
+    entity_id: !input projector_status
+    to:
+      - Starting
+      - "On"
+    # HA's own unknown/unavailable, plus the sensor's Unknown before the
+    # projector first answers.
+    not_from:
+      - unknown
+      - unavailable
+      - Unknown
+    id: down
+  - trigger: state
+    entity_id: !input projector_status
+    to:
+      - Cooling
+      - Standby
+    # HA's own unknown/unavailable, plus the sensor's Unknown before the
+    # projector first answers.
+    not_from:
+      - unknown
+      - unavailable
+      - Unknown
+    id: up
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: down
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input screen
+                state:
+                  - closed
+                  - closing
+        sequence:
+          - action: cover.close_cover
+            target:
+              entity_id: !input screen
+      - conditions:
+          - condition: trigger
+            id: up
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input screen
+                state:
+                  - open
+                  - opening
+        sequence:
+          - action: cover.open_cover
+            target:
+              entity_id: !input screen
