@@ -11,17 +11,14 @@ blueprint:
   homeassistant:
     min_version: "2024.10.0"
   input:
-    z2m_device_name:
-      name: Dimmer Switch Name
-      description: "The friendly name of the Hue Dimmer Switch in Zigbee2MQTT"
+    z2m_device:
+      name: Dimmer Switch
+      description: "The Hue Dimmer Switch paired with Zigbee2MQTT"
       selector:
-        text:
-    z2m_base_topic:
-      name: Zigbee2MQTT Base Topic
-      description: "The MQTT base topic of Zigbee2MQTT"
-      default: zigbee2mqtt
-      selector:
-        text:
+        device:
+          filter:
+            - integration: mqtt
+              manufacturer: Philips
     target_light:
       name: Target Lights
       description: "Target lights used for the off button and brightness control"
@@ -63,34 +60,42 @@ blueprint:
 
 mode: parallel
 
-trigger_variables:
-  z2m_base_topic: !input z2m_base_topic
-  z2m_device_name: !input z2m_device_name
-
 triggers:
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "on_press_release"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "on_press_release"
     id: on_pressed
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "up_press_release"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "up_press_release"
     id: up_pressed
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "up_hold"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "up_hold"
     id: up_tick
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "down_press_release"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "down_press_release"
     id: down_pressed
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "down_hold"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "down_hold"
     id: down_tick
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "off_press_release"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "off_press_release"
     id: off_pressed
 
 variables:

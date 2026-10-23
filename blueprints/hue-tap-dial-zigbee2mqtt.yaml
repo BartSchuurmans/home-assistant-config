@@ -10,17 +10,14 @@ blueprint:
   homeassistant:
     min_version: "2024.10.0"
   input:
-    z2m_device_name:
-      name: Tap Dial Switch Name
-      description: "The friendly name of the Hue Tap Dial Switch in Zigbee2MQTT"
+    z2m_device:
+      name: Tap Dial Switch
+      description: "The Hue Tap Dial Switch paired with Zigbee2MQTT"
       selector:
-        text:
-    z2m_base_topic:
-      name: Zigbee2MQTT Base Topic
-      description: "The MQTT base topic of Zigbee2MQTT"
-      default: zigbee2mqtt
-      selector:
-        text:
+        device:
+          filter:
+            - integration: mqtt
+              manufacturer: Philips
     target_light:
       name: Target Lights
       description: "Target lights used for brightness control"
@@ -71,57 +68,82 @@ mode: queued
 max: 10
 max_exceeded: silent
 
-trigger_variables:
-  z2m_base_topic: !input z2m_base_topic
-  z2m_device_name: !input z2m_device_name
-
 triggers:
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "button_1_press_release"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "button_1_press_release"
     id: button_1_pressed
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "button_2_press_release"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "button_2_press_release"
     id: button_2_pressed
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "button_3_press_release"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "button_3_press_release"
     id: button_3_pressed
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "button_4_press_release"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "button_4_press_release"
     id: button_4_pressed
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "dial_rotate_right_step"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "dial_rotate_right_step"
+    variables:
+      speed_multiplier: 1
     id: dial_right
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "dial_rotate_right_slow"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "dial_rotate_right_slow"
+    variables:
+      speed_multiplier: 2
     id: dial_right
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "dial_rotate_right_fast"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "dial_rotate_right_fast"
+    variables:
+      speed_multiplier: 4
     id: dial_right
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "dial_rotate_left_step"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "dial_rotate_left_step"
+    variables:
+      speed_multiplier: 1
     id: dial_left
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "dial_rotate_left_slow"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "dial_rotate_left_slow"
+    variables:
+      speed_multiplier: 2
     id: dial_left
-  - trigger: mqtt
-    topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/action"
-    payload: "dial_rotate_left_fast"
+  - trigger: device
+    domain: mqtt
+    device_id: !input z2m_device
+    type: action
+    subtype: "dial_rotate_left_fast"
+    variables:
+      speed_multiplier: 4
     id: dial_left
 
 variables:
   brightness_step_pct: !input brightness_step_pct
-  speed_multiplier: >-
-    {% set action = trigger.payload if trigger.payload is defined else '' %}
-    {{ 4 if action.endswith('_fast') else 2 if action.endswith('_slow') else 1 }}
 
 actions:
   - choose:
