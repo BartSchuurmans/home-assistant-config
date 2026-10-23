@@ -144,6 +144,34 @@ triggers:
 
 variables:
   brightness_step_pct: !input brightness_step_pct
+  target_light: !input target_light
+  # The dial steps each light separately, so lights a scene set to different
+  # brightnesses keep their differences. Stepping a light group instead sets
+  # every member to the same brightness, computed from the group's average.
+  # Lights that are off stay off, unless every target light is off.
+  dial_lights: >-
+    {% set ns = namespace(ids=[]) %}
+    {% for key in ['entity_id', 'device_id', 'area_id', 'floor_id', 'label_id'] %}
+      {% set value = target_light.get(key, []) %}
+      {% for item in ([value] if value is string else value) %}
+        {% if key == 'entity_id' %}
+          {% set ns.ids = ns.ids + [item] %}
+        {% elif key == 'device_id' %}
+          {% set ns.ids = ns.ids + device_entities(item) %}
+        {% elif key == 'area_id' %}
+          {% set ns.ids = ns.ids + area_entities(item) %}
+        {% elif key == 'floor_id' %}
+          {% for area in floor_areas(item) %}
+            {% set ns.ids = ns.ids + area_entities(area) %}
+          {% endfor %}
+        {% else %}
+          {% set ns.ids = ns.ids + label_entities(item) %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+    {% set lights = expand(ns.ids) | selectattr('domain', 'eq', 'light') | list %}
+    {% set lights_on = lights | selectattr('state', 'eq', 'on') | list %}
+    {{ (lights_on or lights) | map(attribute='entity_id') | unique | list }}
 
 actions:
   - choose:
@@ -187,8 +215,11 @@ actions:
           - condition: trigger
             id: dial_right
         sequence:
+          - condition: template
+            value_template: "{{ dial_lights | count > 0 }}"
           - action: light.turn_on
-            target: !input target_light
+            target:
+              entity_id: "{{ dial_lights }}"
             data:
               brightness_step_pct: "{{ brightness_step_pct * speed_multiplier }}"
               transition: 0.2
@@ -201,8 +232,11 @@ actions:
           - condition: trigger
             id: dial_left
         sequence:
+          - condition: template
+            value_template: "{{ dial_lights | count > 0 }}"
           - action: light.turn_on
-            target: !input target_light
+            target:
+              entity_id: "{{ dial_lights }}"
             data:
               brightness_step_pct: "{{ -1 * brightness_step_pct * speed_multiplier }}"
               transition: 0.2
