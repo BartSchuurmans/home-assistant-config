@@ -148,7 +148,8 @@ variables:
   # The dial steps each light separately, so lights a scene set to different
   # brightnesses keep their differences. Stepping a light group instead sets
   # every member to the same brightness, computed from the group's average.
-  # Lights that are off stay off, unless every target light is off.
+  # Lights that are off are stepped too: turning up switches them on, and
+  # dimming one to 0% switches it off.
   dial_lights: >-
     {% set ns = namespace(ids=[]) %}
     {% for key in ['entity_id', 'device_id', 'area_id', 'floor_id', 'label_id'] %}
@@ -170,8 +171,7 @@ variables:
       {% endfor %}
     {% endfor %}
     {% set lights = expand(ns.ids) | selectattr('domain', 'eq', 'light') | list %}
-    {% set lights_on = lights | selectattr('state', 'eq', 'on') | list %}
-    {{ (lights_on or lights) | map(attribute='entity_id') | unique | list }}
+    {{ lights | map(attribute='entity_id') | unique | list }}
 
 actions:
   - choose:
