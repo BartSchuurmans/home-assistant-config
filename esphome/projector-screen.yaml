@@ -106,14 +106,18 @@ script:
   # Codes captured from the original remote (EV1527 style, RCSwitch
   # protocol 1 shape at the remote's own pulse length): a 20-bit remote ID
   # followed by a 4-bit button. Each press repeats the code so the
-  # controller catches it, like the remote does.
+  # controller catches it, like the remote does. Repeats go back to back
+  # (wait_time 0): each sync pulse also ends the previous code's last bit,
+  # and ESPHome's default 25 ms gap leaves that bit unterminated.
   - id: send_down
     then:
       - remote_transmitter.transmit_rc_switch_raw:
           code: ${code_down}
           protocol:
             pulse_length: ${pulse_length}
-          repeat: 10
+          repeat:
+            times: 10
+            wait_time: 0s
 
   - id: send_up
     then:
@@ -121,7 +125,9 @@ script:
           code: ${code_up}
           protocol:
             pulse_length: ${pulse_length}
-          repeat: 10
+          repeat:
+            times: 10
+            wait_time: 0s
 
   - id: send_stop
     then:
@@ -129,7 +135,9 @@ script:
           code: ${code_stop}
           protocol:
             pulse_length: ${pulse_length}
-          repeat: 10
+          repeat:
+            times: 10
+            wait_time: 0s
 
 cover:
   - platform: time_based
