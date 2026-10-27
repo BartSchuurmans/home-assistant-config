@@ -2,7 +2,7 @@ blueprint:
   name: Philips Hue Tap Dial Switch (zigbee2mqtt integration)
   description: |
     Philips Hue Tap Dial Switch:
-    - 4 scene buttons (short press buttons 1/2/3/4)
+    - 4 buttons (short press buttons 1/2/3/4), each setting an optional scene and running optional actions
     - brightness control (rotate dial, faster rotation means bigger steps)
   domain: automation
   author: Bart Schuurmans
@@ -25,34 +25,82 @@ blueprint:
         target:
           entity:
             - domain: light
-    scene_1:
+    button_1:
       name: Button 1
-      description: "Scene to set when pushing button 1"
-      selector:
-        entity:
-          filter:
-            - domain: scene
-    scene_2:
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        scene_1:
+          name: Scene
+          description: "Scene to set when pushing button 1. Leave empty to set no scene."
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: scene
+        button_1_action:
+          name: Actions
+          description: "Actions to run when pushing button 1, after the scene (if any)."
+          default: []
+          selector:
+            action: {}
+    button_2:
       name: Button 2
-      description: "Scene to set when pushing button 2"
-      selector:
-        entity:
-          filter:
-            - domain: scene
-    scene_3:
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        scene_2:
+          name: Scene
+          description: "Scene to set when pushing button 2. Leave empty to set no scene."
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: scene
+        button_2_action:
+          name: Actions
+          description: "Actions to run when pushing button 2, after the scene (if any)."
+          default: []
+          selector:
+            action: {}
+    button_3:
       name: Button 3
-      description: "Scene to set when pushing button 3"
-      selector:
-        entity:
-          filter:
-            - domain: scene
-    scene_4:
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        scene_3:
+          name: Scene
+          description: "Scene to set when pushing button 3. Leave empty to set no scene."
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: scene
+        button_3_action:
+          name: Actions
+          description: "Actions to run when pushing button 3, after the scene (if any)."
+          default: []
+          selector:
+            action: {}
+    button_4:
       name: Button 4
-      description: "Scene to set when pushing button 4"
-      selector:
-        entity:
-          filter:
-            - domain: scene
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        scene_4:
+          name: Scene
+          description: "Scene to set when pushing button 4. Leave empty to set no scene."
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: scene
+        button_4_action:
+          name: Actions
+          description: "Actions to run when pushing button 4, after the scene (if any)."
+          default: []
+          selector:
+            action: {}
     brightness_step_pct:
       name: Brightness step size
       description: "Percentage of brightness to change per dial step when rotating slowly; doubled when rotating at medium speed and quadrupled when rotating fast"
@@ -144,6 +192,10 @@ triggers:
 
 variables:
   brightness_step_pct: !input brightness_step_pct
+  scene_1: !input scene_1
+  scene_2: !input scene_2
+  scene_3: !input scene_3
+  scene_4: !input scene_4
   target_light: !input target_light
   # The dial steps each light separately, so lights a scene set to different
   # brightnesses keep their differences. Stepping a light group instead sets
@@ -179,38 +231,62 @@ actions:
           - condition: trigger
             id: button_1_pressed
         sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_1
-            data:
-              transition: 1
+          - if:
+              - condition: template
+                value_template: "{{ scene_1 != '' }}"
+            then:
+              - action: scene.turn_on
+                target:
+                  entity_id: "{{ scene_1 }}"
+                data:
+                  transition: 1
+          - choose: []
+            default: !input button_1_action
       - conditions:
           - condition: trigger
             id: button_2_pressed
         sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_2
-            data:
-              transition: 1
+          - if:
+              - condition: template
+                value_template: "{{ scene_2 != '' }}"
+            then:
+              - action: scene.turn_on
+                target:
+                  entity_id: "{{ scene_2 }}"
+                data:
+                  transition: 1
+          - choose: []
+            default: !input button_2_action
       - conditions:
           - condition: trigger
             id: button_3_pressed
         sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_3
-            data:
-              transition: 1
+          - if:
+              - condition: template
+                value_template: "{{ scene_3 != '' }}"
+            then:
+              - action: scene.turn_on
+                target:
+                  entity_id: "{{ scene_3 }}"
+                data:
+                  transition: 1
+          - choose: []
+            default: !input button_3_action
       - conditions:
           - condition: trigger
             id: button_4_pressed
         sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_4
-            data:
-              transition: 1
+          - if:
+              - condition: template
+                value_template: "{{ scene_4 != '' }}"
+            then:
+              - action: scene.turn_on
+                target:
+                  entity_id: "{{ scene_4 }}"
+                data:
+                  transition: 1
+          - choose: []
+            default: !input button_4_action
       - conditions:
           - condition: trigger
             id: dial_right
