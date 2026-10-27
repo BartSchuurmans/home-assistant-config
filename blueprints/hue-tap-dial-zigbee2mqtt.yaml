@@ -19,8 +19,8 @@ blueprint:
             - integration: mqtt
               manufacturer: Philips
     target_light:
-      name: Target Lights
-      description: "Target lights used for brightness control"
+      name: Dimming Lights
+      description: "Lights dimmed by rotating the dial"
       selector:
         target:
           entity:

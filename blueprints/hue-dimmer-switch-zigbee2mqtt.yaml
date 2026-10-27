@@ -2,9 +2,8 @@ blueprint:
   name: Philips Hue Dimmer Switch (zigbee2mqtt integration)
   description: |
     Philips Hue Dimmer Switch:
-    - 3 buttons (short press on/up/down), each setting an optional scene and running optional actions
-    - brightness control (hold up/down)
-    - off button (short press off), turning off the target lights and running optional actions
+    - 4 buttons (short press on/up/down/off), each setting an optional scene and running optional actions
+    - brightness control of the dimming lights (hold up/down)
   domain: automation
   author: Bart Schuurmans
   source_url: https://github.com/BartSchuurmans/home-assistant-config/blob/main/blueprints/hue-dimmer-switch-zigbee2mqtt.yaml
@@ -20,8 +19,8 @@ blueprint:
             - integration: mqtt
               manufacturer: Philips
     target_light:
-      name: Target Lights
-      description: "Target lights used for the off button and brightness control"
+      name: Dimming Lights
+      description: "Lights dimmed by holding the Up and Down buttons"
       selector:
         target:
           entity:
@@ -88,9 +87,17 @@ blueprint:
       icon: mdi:power
       collapsed: true
       input:
+        scene_off:
+          name: Scene
+          description: "Scene to set when pushing the Off button. Leave empty to set no scene."
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: scene
         off_action:
           name: Actions
-          description: "Actions to run when pushing the Off button, after turning off the target lights."
+          description: "Actions to run when pushing the Off button, after the scene (if any)."
           default: []
           selector:
             action: {}
@@ -150,6 +157,7 @@ variables:
   scene_on: !input scene_on
   scene_up: !input scene_up
   scene_down: !input scene_down
+  scene_off: !input scene_off
 
 actions:
   - choose:
@@ -220,9 +228,14 @@ actions:
           - condition: trigger
             id: off_pressed
         sequence:
-          - action: light.turn_off
-            target: !input target_light
-            data:
-              transition: 1
+          - if:
+              - condition: template
+                value_template: "{{ scene_off != '' }}"
+            then:
+              - action: scene.turn_on
+                target:
+                  entity_id: "{{ scene_off }}"
+                data:
+                  transition: 1
           - choose: []
             default: !input off_action
