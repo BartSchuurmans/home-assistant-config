@@ -2,9 +2,8 @@ blueprint:
   name: Philips Hue Dimmer Switch (hue integration)
   description: |
     Philips Hue Dimmer Switch:
-    - 3 scene buttons (short press on/up/down)
-    - brightness control (hold up/down)
-    - off button (short press off)
+    - 4 buttons (short press on/up/down/off), each running its own actions
+    - brightness control of the dimming lights (hold up/down)
   domain: automation
   author: Bart Schuurmans
   source_url: https://github.com/BartSchuurmans/home-assistant-config/blob/main/blueprints/hue-dimmer-switch.yaml
@@ -19,33 +18,36 @@ blueprint:
           filter:
             - integration: hue
     target_light:
-      name: Target Lights
-      description: "Target lights used for the off button and brightness control"
+      name: Dimming Lights
+      description: "Lights dimmed by holding the Up and Down buttons"
       selector:
         target:
           entity:
             - domain: light
-    scene_on:
-      name: On Button
-      description: "Scene to set when pushing the On button"
+    on_action:
+      name: On button
+      description: "Actions to run when pushing the On button"
+      default: []
       selector:
-        entity:
-          filter:
-            - domain: scene
-    scene_up:
-      name: Up Button
-      description: "Scene to set when pushing the Brightness Up button"
+        action: {}
+    up_action:
+      name: Up button
+      description: "Actions to run when pushing the Up button"
+      default: []
       selector:
-        entity:
-          filter:
-            - domain: scene
-    scene_down:
-      name: Down Button
-      description: "Scene to set when pushing the Brightness Down button"
+        action: {}
+    down_action:
+      name: Down button
+      description: "Actions to run when pushing the Down button"
+      default: []
       selector:
-        entity:
-          filter:
-            - domain: scene
+        action: {}
+    off_action:
+      name: Off button
+      description: "Actions to run when pushing the Off button"
+      default: []
+      selector:
+        action: {}
     brightness_step_pct:
       name: Brightness step size
       description: "Percentage of brightness to change per tick (~ second)"
@@ -105,30 +107,15 @@ actions:
       - conditions:
           - condition: trigger
             id: on_pressed
-        sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_on
-            data:
-              transition: 1
+        sequence: !input on_action
       - conditions:
           - condition: trigger
             id: up_pressed
-        sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_up
-            data:
-              transition: 1
+        sequence: !input up_action
       - conditions:
           - condition: trigger
             id: down_pressed
-        sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_down
-            data:
-              transition: 1
+        sequence: !input down_action
       - conditions:
           - condition: trigger
             id: up_tick
@@ -150,8 +137,4 @@ actions:
       - conditions:
           - condition: trigger
             id: off_pressed
-        sequence:
-          - action: light.turn_off
-            target: !input target_light
-            data:
-              transition: 1
+        sequence: !input off_action

@@ -2,7 +2,7 @@ blueprint:
   name: Philips Hue Tap Dial Switch (zigbee2mqtt integration)
   description: |
     Philips Hue Tap Dial Switch:
-    - 4 scene buttons (short press buttons 1/2/3/4)
+    - 4 buttons (short press buttons 1/2/3/4), each running its own actions
     - brightness control (rotate dial, faster rotation means bigger steps)
   domain: automation
   author: Bart Schuurmans
@@ -19,40 +19,36 @@ blueprint:
             - integration: mqtt
               manufacturer: Philips
     target_light:
-      name: Target Lights
-      description: "Target lights used for brightness control"
+      name: Dimming Lights
+      description: "Lights dimmed by rotating the dial"
       selector:
         target:
           entity:
             - domain: light
-    scene_1:
-      name: Button 1
-      description: "Scene to set when pushing button 1"
+    button_1_action:
+      name: Button 1 button
+      description: "Actions to run when pushing button 1"
+      default: []
       selector:
-        entity:
-          filter:
-            - domain: scene
-    scene_2:
-      name: Button 2
-      description: "Scene to set when pushing button 2"
+        action: {}
+    button_2_action:
+      name: Button 2 button
+      description: "Actions to run when pushing button 2"
+      default: []
       selector:
-        entity:
-          filter:
-            - domain: scene
-    scene_3:
-      name: Button 3
-      description: "Scene to set when pushing button 3"
+        action: {}
+    button_3_action:
+      name: Button 3 button
+      description: "Actions to run when pushing button 3"
+      default: []
       selector:
-        entity:
-          filter:
-            - domain: scene
-    scene_4:
-      name: Button 4
-      description: "Scene to set when pushing button 4"
+        action: {}
+    button_4_action:
+      name: Button 4 button
+      description: "Actions to run when pushing button 4"
+      default: []
       selector:
-        entity:
-          filter:
-            - domain: scene
+        action: {}
     brightness_step_pct:
       name: Brightness step size
       description: "Percentage of brightness to change per dial step when rotating slowly; doubled when rotating at medium speed and quadrupled when rotating fast"
@@ -178,39 +174,19 @@ actions:
       - conditions:
           - condition: trigger
             id: button_1_pressed
-        sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_1
-            data:
-              transition: 1
+        sequence: !input button_1_action
       - conditions:
           - condition: trigger
             id: button_2_pressed
-        sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_2
-            data:
-              transition: 1
+        sequence: !input button_2_action
       - conditions:
           - condition: trigger
             id: button_3_pressed
-        sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_3
-            data:
-              transition: 1
+        sequence: !input button_3_action
       - conditions:
           - condition: trigger
             id: button_4_pressed
-        sequence:
-          - action: scene.turn_on
-            target:
-              entity_id: !input scene_4
-            data:
-              transition: 1
+        sequence: !input button_4_action
       - conditions:
           - condition: trigger
             id: dial_right
