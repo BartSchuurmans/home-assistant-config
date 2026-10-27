@@ -2,7 +2,7 @@ blueprint:
   name: Philips Hue Dimmer Switch (zigbee2mqtt integration)
   description: |
     Philips Hue Dimmer Switch:
-    - 4 buttons (short press on/up/down/off), each setting an optional scene and running optional actions
+    - 4 buttons (short press on/up/down/off), each running its own actions
     - brightness control of the dimming lights (hold up/down)
   domain: automation
   author: Bart Schuurmans
@@ -25,82 +25,30 @@ blueprint:
         target:
           entity:
             - domain: light
-    on_button:
+    on_action:
       name: On button
-      icon: mdi:gesture-tap-button
-      collapsed: true
-      input:
-        scene_on:
-          name: Scene
-          description: "Scene to set when pushing the On button. Leave empty to set no scene."
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: scene
-        on_action:
-          name: Actions
-          description: "Actions to run when pushing the On button, after the scene (if any)."
-          default: []
-          selector:
-            action: {}
-    up_button:
+      description: "Actions to run when pushing the On button"
+      default: []
+      selector:
+        action: {}
+    up_action:
       name: Up button
-      icon: mdi:gesture-tap-button
-      collapsed: true
-      input:
-        scene_up:
-          name: Scene
-          description: "Scene to set when pushing the Up button. Leave empty to set no scene."
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: scene
-        up_action:
-          name: Actions
-          description: "Actions to run when pushing the Up button, after the scene (if any)."
-          default: []
-          selector:
-            action: {}
-    down_button:
+      description: "Actions to run when pushing the Up button"
+      default: []
+      selector:
+        action: {}
+    down_action:
       name: Down button
-      icon: mdi:gesture-tap-button
-      collapsed: true
-      input:
-        scene_down:
-          name: Scene
-          description: "Scene to set when pushing the Down button. Leave empty to set no scene."
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: scene
-        down_action:
-          name: Actions
-          description: "Actions to run when pushing the Down button, after the scene (if any)."
-          default: []
-          selector:
-            action: {}
-    off_button:
+      description: "Actions to run when pushing the Down button"
+      default: []
+      selector:
+        action: {}
+    off_action:
       name: Off button
-      icon: mdi:power
-      collapsed: true
-      input:
-        scene_off:
-          name: Scene
-          description: "Scene to set when pushing the Off button. Leave empty to set no scene."
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: scene
-        off_action:
-          name: Actions
-          description: "Actions to run when pushing the Off button, after the scene (if any)."
-          default: []
-          selector:
-            action: {}
+      description: "Actions to run when pushing the Off button"
+      default: []
+      selector:
+        action: {}
     brightness_step_pct:
       name: Brightness step size
       description: "Percentage of brightness to change per tick (~ second)"
@@ -154,58 +102,21 @@ triggers:
 
 variables:
   brightness_step_pct: !input brightness_step_pct
-  scene_on: !input scene_on
-  scene_up: !input scene_up
-  scene_down: !input scene_down
-  scene_off: !input scene_off
 
 actions:
   - choose:
       - conditions:
           - condition: trigger
             id: on_pressed
-        sequence:
-          - if:
-              - condition: template
-                value_template: "{{ scene_on != '' }}"
-            then:
-              - action: scene.turn_on
-                target:
-                  entity_id: "{{ scene_on }}"
-                data:
-                  transition: 1
-          - choose: []
-            default: !input on_action
+        sequence: !input on_action
       - conditions:
           - condition: trigger
             id: up_pressed
-        sequence:
-          - if:
-              - condition: template
-                value_template: "{{ scene_up != '' }}"
-            then:
-              - action: scene.turn_on
-                target:
-                  entity_id: "{{ scene_up }}"
-                data:
-                  transition: 1
-          - choose: []
-            default: !input up_action
+        sequence: !input up_action
       - conditions:
           - condition: trigger
             id: down_pressed
-        sequence:
-          - if:
-              - condition: template
-                value_template: "{{ scene_down != '' }}"
-            then:
-              - action: scene.turn_on
-                target:
-                  entity_id: "{{ scene_down }}"
-                data:
-                  transition: 1
-          - choose: []
-            default: !input down_action
+        sequence: !input down_action
       - conditions:
           - condition: trigger
             id: up_tick
@@ -227,15 +138,4 @@ actions:
       - conditions:
           - condition: trigger
             id: off_pressed
-        sequence:
-          - if:
-              - condition: template
-                value_template: "{{ scene_off != '' }}"
-            then:
-              - action: scene.turn_on
-                target:
-                  entity_id: "{{ scene_off }}"
-                data:
-                  transition: 1
-          - choose: []
-            default: !input off_action
+        sequence: !input off_action
