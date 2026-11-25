@@ -5,6 +5,8 @@ blueprint:
     (e.g. Sonoff TRVZB / TRV-ZBT) as its external temperature.
     - Set the valve's temperature sensor to "external" once in Zigbee2MQTT.
     - Triggers on the sensor's MQTT messages, so it also fires when the temperature hasn't changed.
+      (It listens on all Zigbee2MQTT device topics and keeps only the picked sensor's; the device's
+      name in Home Assistant's MQTT integration must still match its Zigbee2MQTT friendly name.)
     - If the sensor goes quiet (dead battery), nothing is sent and the valve falls back to its
       internal sensor by itself (Sonoff: after 2 hours without an external reading).
     - The sensor must report at least once per fallback period while the temperature holds steady;
@@ -15,9 +17,16 @@ blueprint:
   homeassistant:
     min_version: "2024.10.0"
   input:
-    sensor_topic:
-      name: Temperature sensor topic
-      description: "The sensor's Zigbee2MQTT topic, e.g. zigbee2mqtt/Bedroom Climate Sensor"
+    sensor_device:
+      name: Temperature sensor
+      description: "The temperature sensor paired with Zigbee2MQTT"
+      selector:
+        device:
+          filter:
+            - integration: mqtt
+    base_topic:
+      name: Zigbee2MQTT base topic
+      default: zigbee2mqtt
       selector:
         text:
     external_temperature:
@@ -32,13 +41,21 @@ blueprint:
 mode: queued
 max: 3
 
+trigger_variables:
+  base_topic: !input base_topic
+
 triggers:
   - trigger: mqtt
-    topic: !input sensor_topic
+    topic: "{{ base_topic }}/+"
+
+variables:
+  sensor_device: !input sensor_device
 
 conditions:
   - condition: template
-    value_template: "{{ trigger.payload_json is defined and trigger.payload_json.temperature is number }}"
+    value_template: >
+      {{ trigger.topic == base_topic ~ '/' ~ device_attr(sensor_device, 'name')
+         and trigger.payload_json is defined and trigger.payload_json.temperature is number }}
 
 actions:
   - action: number.set_value
