@@ -1,0 +1,48 @@
+blueprint:
+  name: TRV external temperature (zigbee2mqtt integration)
+  description: |
+    Sends every report of a Zigbee2MQTT temperature sensor to a thermostatic radiator valve
+    (e.g. Sonoff TRVZB / TRV-ZBT) as its external temperature.
+    - Set the valve's temperature sensor to "external" once in Zigbee2MQTT.
+    - Triggers on the sensor's MQTT messages, so it also fires when the temperature hasn't changed.
+    - If the sensor goes quiet (dead battery), nothing is sent and the valve falls back to its
+      internal sensor by itself (Sonoff: after 2 hours without an external reading).
+    - The sensor must report at least once per fallback period while the temperature holds steady;
+      shorten its maximum report interval in Zigbee2MQTT if it doesn't.
+  domain: automation
+  author: Bart Schuurmans
+  source_url: https://github.com/BartSchuurmans/home-assistant-config/blob/main/blueprints/trv-external-temperature-zigbee2mqtt.yaml
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    sensor_topic:
+      name: Temperature sensor topic
+      description: "The sensor's Zigbee2MQTT topic, e.g. zigbee2mqtt/Bedroom Climate Sensor"
+      selector:
+        text:
+    external_temperature:
+      name: Valve external temperature input
+      description: "The valve's external temperature number entity (…_external_temperature_input)"
+      selector:
+        entity:
+          filter:
+            - integration: mqtt
+              domain: number
+
+mode: queued
+max: 3
+
+triggers:
+  - trigger: mqtt
+    topic: !input sensor_topic
+
+conditions:
+  - condition: template
+    value_template: "{{ trigger.payload_json is defined and trigger.payload_json.temperature is number }}"
+
+actions:
+  - action: number.set_value
+    target:
+      entity_id: !input external_temperature
+    data:
+      value: "{{ trigger.payload_json.temperature | round(1) }}"
